@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1" >
+    <title>Gemini API Quick Start</title>
+    <style>
+        body {
+            margin: 32px;
+            position: relative;
+        }
+        section {
+            border: 1px solid gray;
+            padding: 16px;
+            margin-bottom: 32px;
+        }
+        input[type=text] {
+            width: 800px;
+            height: 32px;
+            font-size: 24px;
+        }
+        p {
+            font-size: 22px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Gemini API Quick Start</h1>
+
+<section>
+    <label for="prompt">プロンプト: </label>
+    <input type="text" id="prompt">
+    <button id="sendText">送信する</button>
+    <button id="sendChatMessage">チャットする</button>
+    <button id="sendWithStream">ストリーミングする</button>
+</section>
+
+<section>
+    <label for="files">画像: </label>
+    <input type="file" id="files" multiple />
+    <button id="sendTextAndImages">送信する</button>
+</section>
+
+<section>
+    <label for="output">出力: </label><br />
+    <p id="output"></p>
+</section>
+
+<script type="importmap">
+    {
+      "imports": {
+        "@google/generative-ai": "https://esm.run/@google/generative-ai"
+      }
+    }
+</script>
+
+<script type="module">
+  import { GoogleGenerativeAI } from "@google/generative-ai";
+
+  const API_KEY = "API_KEY";
+  const genAI = new GoogleGenerativeAI(API_KEY);
+
+  document.getElementById("sendText").addEventListener("click", async () => {
+    const model = genAI.getGenerativeModel({ model: "gemini-pro"});
+    const prompt = document.getElementById("prompt").value;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    document.getElementById("output").innerText = response.text();
+  });
+
+  async function fileToGenerativePart(file) {
+    const base64EncodedDataPromise = new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result.split(',')[1]);
+      reader.readAsDataURL(file);
+    });
+    return {
+      inlineData: { data: await base64EncodedDataPromise, mimeType: file.type },
+    };
+  }
+
+  document.getElementById("sendTextAndImages").addEventListener("click", async () => {
+    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+    const prompt = document.getElementById("prompt").value;
+    const fileInputEl = document.querySelector("input[type=file]");
+    const imageParts = await Promise.all(
+      [...fileInputEl.files].map(fileToGenerativePart)
+    );
+    const result = await model.generateContent([prompt, ...imageParts]);
+    const response = await result.response;
+    document.getElementById("output").innerText = response.text();
+  });
+
+  let chat = null;
+
+  document.getElementById("sendChatMessage").addEventListener("click", async () => {
+    const model = genAI.getGenerativeModel({ model: "gemini-pro"});
+    const prompt = document.getElementById("prompt").value;
+    if (chat === null) {
+      chat = model.startChat({
+        generationConfig: {
+          maxOutputTokens: 100,
+        },
+      });
+    }
+    const result = await chat.sendMessage(prompt);
+    const response = await result.response;
+    document.getElementById("output").innerText = response.text();
+  });
+
+  document.getElementById("sendWithStream").addEventListener("click", async () => {
+    const model = genAI.getGenerativeModel({ model: "gemini-pro"});
+    const prompt = document.getElementById("prompt").value;
+    document.getElementById("output").innerText = "";
+    const result = await model.generateContentStream(prompt);
+    for await (const chunk of result.stream) {
+      const chunkText = chunk.text();
+      document.getElementById("output").innerText += chunkText;
+    }
+  });
+</script>
+</body>
+</html>
