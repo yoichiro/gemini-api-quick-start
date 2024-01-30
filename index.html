@@ -30,6 +30,7 @@
 
 <h1>Gemini API Quick Start</h1>
 
+<!-- Prompt Section -->
 <section>
     <label for="prompt">プロンプト: </label>
     <input type="text" id="prompt">
@@ -38,12 +39,14 @@
     <button id="sendWithStream">ストリーミングする</button>
 </section>
 
+<!-- Images Section -->
 <section>
     <label for="files">画像: </label>
     <input type="file" id="files" multiple />
     <button id="sendTextAndImages">送信する</button>
 </section>
 
+<!-- Output Section -->
 <section>
     <label for="output">出力: </label><br />
     <p id="output"></p>
@@ -60,9 +63,11 @@
 <script type="module">
   import { GoogleGenerativeAI } from "@google/generative-ai";
 
+  // TODO: Replace below with your API key.
   const API_KEY = "API_KEY";
   const genAI = new GoogleGenerativeAI(API_KEY);
 
+  // Input: Text, Output: Text
   document.getElementById("sendText").addEventListener("click", async () => {
     const model = genAI.getGenerativeModel({ model: "gemini-pro"});
     const prompt = document.getElementById("prompt").value;
@@ -71,6 +76,7 @@
     document.getElementById("output").innerText = response.text();
   });
 
+  // Utility function to load an image from the passed file.
   async function fileToGenerativePart(file) {
     const base64EncodedDataPromise = new Promise((resolve) => {
       const reader = new FileReader();
@@ -82,6 +88,7 @@
     };
   }
 
+  // Input: Text and Images, Output: Text
   document.getElementById("sendTextAndImages").addEventListener("click", async () => {
     const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
     const prompt = document.getElementById("prompt").value;
@@ -94,8 +101,8 @@
     document.getElementById("output").innerText = response.text();
   });
 
+  // Input: Text, Output Text (Keep the conversation context)
   let chat = null;
-
   document.getElementById("sendChatMessage").addEventListener("click", async () => {
     const model = genAI.getGenerativeModel({ model: "gemini-pro"});
     const prompt = document.getElementById("prompt").value;
@@ -111,6 +118,7 @@
     document.getElementById("output").innerText = response.text();
   });
 
+  // Input: Text, Output Text (with streaming)
   document.getElementById("sendWithStream").addEventListener("click", async () => {
     const model = genAI.getGenerativeModel({ model: "gemini-pro"});
     const prompt = document.getElementById("prompt").value;
